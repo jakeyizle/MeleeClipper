@@ -24,7 +24,7 @@ const limitCharacters = false;
 // possible characters: "Captain Falcon", "Donkey Kong", "Fox", "Mr. Game & Watch", "Kirby", "Bowser", "Link", "Luigi", "Mario", "Marth", "Mewtwo", "Ness", "Peach", "Pikachu", "Ice Climbers", "Jigglypuff", "Samus", "Yoshi", "Zelda", "Sheik", "Falco", "Young Link", "Dr. Mario", "Roy", "Pichu", "Ganondorf"
 const acceptableCharacters = ["Fox"];
 
-// the input it looks for to find moments. 
+// the input it looks for to find moments.
 // possible inputs: "A", "B", "X", "Y", "Z", "L", "R", "Start", "DpadRight", "DpadLeft", "DpadUp", "DpadDown"
 // these are case sensitive
 
@@ -118,16 +118,16 @@ function BCheck(buttons, buttonToCheck) {
 // setting up input checks for each possible input
 const inputChecks = {
   "A" : function(pre) { return BCheck(pre.physicalButtons, Button.a); },
-  "B" : function(pre) { return BCheck(pre.physicalButtons, Button.b); }, 
-  "X" : function(pre) { return BCheck(pre.physicalButtons, Button.x); }, 
-  "Y" : function(pre) { return BCheck(pre.physicalButtons, Button.y); }, 
-  "Z" : function(pre) { return BCheck(pre.physicalButtons, Button.z); }, 
-  "L" : function(pre) { return (BCheck(pre.physicalButtons, Button.l) || pre.physicalLTrigger > 0.5); }, 
-  "R" : function(pre) { return (BCheck(pre.physicalButtons, Button.r) || pre.physicalRTrigger > 0.5); }, 
-  "Start" : function(pre) { return BCheck(pre.physicalButtons, Button.start); }, 
-  "DpadRight" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadRight); }, 
-  "DpadLeft" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadLeft); }, 
-  "DpadUp" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadUp); }, 
+  "B" : function(pre) { return BCheck(pre.physicalButtons, Button.b); },
+  "X" : function(pre) { return BCheck(pre.physicalButtons, Button.x); },
+  "Y" : function(pre) { return BCheck(pre.physicalButtons, Button.y); },
+  "Z" : function(pre) { return BCheck(pre.physicalButtons, Button.z); },
+  "L" : function(pre) { return (BCheck(pre.physicalButtons, Button.l) || pre.physicalLTrigger > 0.5); },
+  "R" : function(pre) { return (BCheck(pre.physicalButtons, Button.r) || pre.physicalRTrigger > 0.5); },
+  "Start" : function(pre) { return BCheck(pre.physicalButtons, Button.start); },
+  "DpadRight" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadRight); },
+  "DpadLeft" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadLeft); },
+  "DpadUp" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadUp); },
   "DpadDown" : function(pre) { return BCheck(pre.physicalButtons, Button.dpadDown); }
 }
 
@@ -175,7 +175,7 @@ for (var i=0;i<files.length;i++) {
 
   // grab parsed game object from slp-parser-js
   const game = new SlippiGame(files[i]);
-  
+
   const settings = game.getSettings();
 
   // check if we should skip the file or if its broken
@@ -282,10 +282,10 @@ for (var i=0;i<files.length;i++) {
                 "startFrame" : Math.max(-123, n-captureTimePreInput),
                 "endFrame" : Math.min(lastframe, n+captureTimePostInput)
               }
-              
+
               lockout = captureLockoutTime;
               momentCount++;
-              
+
               logMessage(`[MOMENT #${momentCount.toString().padStart(1, '0')}] Port ${p+1} | ${GetCharName(settings.players, p)} | ${slp.stages.getStageName(settings.stageId)} | ${GetTimeText(n)} into game`);
             }
           }
@@ -300,12 +300,32 @@ console.log(`Found ${momentCount} moments!`);
 
 // now write the output to a json file
 
+
 let jsonText = JSON.stringify(output);
 
-fs.writeFile(`${output_path_and_filename}.json`, jsonText, function(err) {
-    if(err) {
-        return console.log(err);
-    }
+  fs.writeFile(`${output_path_and_filename}.json`, jsonText, function(err) {
+      if(err) {
+          return console.log(err);
+      }
+  
+      console.log("Replay clip queue file was saved!");
 
-    console.log("Replay clip queue file was saved!");
 });
+PlayMoments(`${output_path_and_filename}.json`);
+
+function PlayMoments(fileName) {
+  var input = {
+    "mode": "queue",
+    "replay": "",
+    "isRealTimeMode": false,
+    "outputOverlayFiles": true,
+    "queue": []
+  };
+  fs.readFile(fileName, 'utf8', function(err, data) {
+    if(err) {
+      return console.log(err);
+    }
+    var obj = JSON.parse(data);
+    console.log(obj);
+  })
+}
