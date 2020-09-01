@@ -7,7 +7,7 @@ const path = require('path');
 // -- COMBO FINDING VARIABLES --
 
 // make sure folders exist before running script
-const replay_path = "replays";
+const replay_path = "replayInbox";
 const output_path_and_filename = "clipShows/moments";
 const using_absolute_paths = false; // absolute path would be something like "D:/schmoo/replays"
 
