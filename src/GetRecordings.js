@@ -5,7 +5,6 @@ var ps = require('ps-node');
 var mv = require('mv');
 const inboxPath = path.join(__dirname, '../replayInbox');
 const dolphinVideo = 'C:\\Users\\18135\\AppData\\Roaming\\Slippi Desktop App\\dolphin\\User\\Dump\\Frames\\framedump0.avi'
-const videoStorePath = ''
 //slippi dolphin has to be edited to shutdown at the end of replays, which requires editing the code and then rebuilding
 //also configure it to dump frames
 const dolphinPath = "C:\\Users\\18135\\AppData\\Roaming\\Slippi Desktop App\\dolphin\\Dolphin.exe"
@@ -45,6 +44,7 @@ function recordAndWait(i, max) {
         let recordingTitle = fileTitle + clipAddition;        
 
         var replayCommand = `"${dolphinPath}" -i tempMoments.json -b -e "${isoPath}"`;
+        console.log(replayCommand);
         exec(replayCommand, (error) => {
             //dolphin will exit, and then the command will error
             //then this fires - so this is how we time it (since opening a million dolphins doesnt work so well)
@@ -52,7 +52,7 @@ function recordAndWait(i, max) {
                 console.log(`${i} error - but actually good!`);                    
                 storeRecording(recordingTitle);
                 //this dumb recursion was the only way I could think
-                doItAgain(i+1, max);                       
+                recordAndWait(i+1, max);                       
                 return;                  
             }
         })
@@ -60,7 +60,8 @@ function recordAndWait(i, max) {
 }
 
 function storeRecording(title) {
-    return mv(dolphinVideo, 'D:\\Coding Projects\\schlippi\\storedVideos\\'+title+'.avi', function(err) {
+    let recordingPath = path.join(__dirname, '../storedVideos/'+title+'.avi')
+    return mv(dolphinVideo, recordingPath, function(err) {
         if (err) {
             console.log(err);
         }

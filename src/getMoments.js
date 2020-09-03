@@ -18,16 +18,19 @@ var output = {
 //   }
 
 
+
+//go through all replays in dir, and get a bunch of conversions from them
+//generate one moments.json file (ironically will break it up later)
+//one json file can map to a bunch of replay files
 fs.readdir(inboxPath, function(err, files) {
     if (err) {
         return console.log('error: '+err);
     }
         
     for (let i = 0; i < files.length; i++) {        
-        let file = path.join(inboxPath, files[i])
-        console.log(file);
-        const game = new SlippiGame(file);
-        //const settings = game.getSettings();
+        let file = path.join(inboxPath, files[i])        
+        const game = new SlippiGame(file);        
+        //this is where some super algorithim would tell us what to capture
         var conversions = game.getStats().conversions.filter(conversion=>conversion.moves.length > 5 && conversion.didKill);
         conversions.forEach(function(conversion) {            
             var queue = {

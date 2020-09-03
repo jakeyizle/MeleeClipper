@@ -3,3 +3,5 @@ node_modules
 replayInbox
 /tempMoments.json
 storedVideos
+uploadedFiles
+storedUploads
