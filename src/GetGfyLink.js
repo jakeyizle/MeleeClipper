@@ -1,5 +1,12 @@
+//firebase stuff
+const admin = require('firebase-admin');
+const serviceAccount = require('../settings/meleeclipper-8a8ca8cb8489.json');
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+const db = admin.firestore();
+
 //take recording -> upload to gfycat
-//store the filename/gfycat link in a text file for now?
 const fs = require("fs"); 
 const fetch = require('node-fetch');
 const path = require('path');
@@ -63,10 +70,14 @@ fetch("https://api.gfycat.com/v1/oauth/token", tokenOptions)
 
                 fetch('https://filedrop.gfycat.com', {method: 'POST', body: params, redirect: 'follow'})
                 .then((res)=> {
-                    gfyFiles.push( {
+                    
+                    let data = {
                         "gfyURL": gfyResult.gfyname,
-                        "fileName": files[i]
-                    })
+                        "fileName": files[i],
+                        "votes": ""
+                    }
+                    gfyFiles.push(data);
+                    db.collection('clips').add(data);
                     //Guess this will be an insert statement once i have a DB
                     writeLog(i);
                 });            
@@ -82,32 +93,3 @@ fetch("https://api.gfycat.com/v1/oauth/token", tokenOptions)
         });
     }
   }
-// var gfyFiles = new Array();
-
-// fs.readdir(videoPath, function(err, files) { 
-//     fetch('https://api.gfycat.com/v1/gfycats', {method:'POST'})
-//         .then(res=> res.json())
-//         .then(json => {
-//             var filePath = path.join(uploadPath, json.gfyname)
-//             fs.renameSync(path.join(videoPath, files[0]), filePath);
-//             var params = new FormData();
-//             params.append('key', json.gfyname);
-//             var file = fs.readFileSync(filePath);
-//             params.append('file', file, filePath);
-
-//             fetch('https://filedrop.gfycat.com', {method: 'POST', body: params, redirect: 'follow'})
-//                 .then((res)=> {
-//                     console.log(res);
-//                     gfyFiles.push( {
-//                         "gfyURL": json.gfyname,
-//                         "fileName": path.join(uploadPath, json.gfyname)
-//                     })
-//                     fs.writeFile(path.join(__dirname,"uploadedFiles.json"), JSON.stringify(gfyFiles), function(err) {
-//                     });
-//                 });            
-//         });
-    
-//         for (let i = 0; i < files.length; i++) {
-
-//         }
-// })
