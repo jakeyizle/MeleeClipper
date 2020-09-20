@@ -29,37 +29,43 @@ recordAndWait(0, max);
 function recordAndWait(i, max) {
     if (i < max) {
         //we record one clip at a time, this way they are separated
-        //need to treat like array to get the json formatting right        
-        output.queue.push(moments.queue[i]);    
-        fs.writeFileSync("tempMoments.json", JSON.stringify(output));
-        output.queue.pop();
+        //need to treat like array to get the json formatting right                                
+        console.log(moments.queue[i]);
         //adding framedata to title
         let fullFileTitle = moments.queue[i].path;
         let titleRegex = /Game.*?(?=\.)/;
         let fileTitle = fullFileTitle.match(titleRegex);
         
-        let frameDiff = moments.queue[i].endFrame - moments.queue[i].startFrame;
-        let clipAddition = `_sf-${moments.queue[i].startFrame}_rf-${frameDiff}`;
+        let frameDiff = moments.queue[i].realEndFrame - moments.queue[i].realStartFrame;
+        let clipAddition = `_sf-${moments.queue[i].realStartFrame}_rf-${frameDiff}`;
 
         let recordingTitle = fileTitle + clipAddition;        
 
         var replayCommand = `"${dolphinPath}" -i tempMoments.json -b -e "${isoPath}"`;
         console.log(replayCommand);
+        // delete moments.queue[i].realStartFrame;
+        // delete moments.queue[i].realEndFrame;
+        output.queue.push(moments.queue[i]);    
+        fs.writeFileSync("tempMoments.json", JSON.stringify(output));
+        
+        output.queue.pop();
         exec(replayCommand, (error) => {
             //dolphin will exit, and then the command will error
             //then this fires - so this is how we time it (since opening a million dolphins doesnt work so well)
             if (error) {
                 console.log(`${i} error - but actually good!`);                    
-                storeRecording(recordingTitle);
-                //this dumb recursion was the only way I could think
-                recordAndWait(i+1, max);                       
-                return;                  
+                storeRecording(recordingTitle).then(() => {
+                    //this dumb recursion was the only way I could think
+                    recordAndWait(i+1, max);                       
+                    return; 
+                })
+                 
             }
         })
     }
 }
 
-function storeRecording(title) {
+async function storeRecording(title) {
     let recordingPath = path.join(__dirname, '../storedVideos/'+title+'.avi')
     return mv(dolphinVideo, recordingPath, function(err) {
         if (err) {

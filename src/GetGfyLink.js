@@ -1,11 +1,9 @@
-//firebase stuff
 const admin = require('firebase-admin');
 const serviceAccount = require('../settings/meleeclipper-8a8ca8cb8489.json');
 admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+  credential: admin.credential.cert(serviceAccount)
+});
 const db = admin.firestore();
-
 //take recording -> upload to gfycat
 const fs = require("fs"); 
 const fetch = require('node-fetch');
@@ -36,59 +34,64 @@ var tokenOptions = {
     redirect: 'follow' 
 };
 
+
+
 fetch("https://api.gfycat.com/v1/oauth/token", tokenOptions)
   .then(res => res.json())
   .then(tokenResult => {
-      var token = tokenResult.access_token;
+        var files = fs.readdirSync(videoPath);
+        uploadGfy(0, files.length, tokenResult.access_token); 
+  })
+  .catch((err) => console.log(err));
 
-      var authHeaders = new Headers();
-      authHeaders.append("Authorization", "Bearer "+token);
-      
-      var gfycatsOptions = {
-        method: 'POST',
-        headers: new Headers({
-            "Authorization" : "Bearer " + token
-        }),
-        redirect: 'follow'
-      }
-      var files = fs.readdirSync(videoPath);
-      numberOfFiles = files.length;
-      for (let i = 0; i < files.length; i++) {
-        fetch("https://api.gfycat.com/v1/gfycats", gfycatsOptions)
-            .then(res=> res.json())
-            .then(gfyResult => {
-                console.log(files[i]);
-                
-                var newFilePath = path.join(uploadPath, gfyResult.gfyname);
-                fs.renameSync(path.join(videoPath, files[i]), newFilePath);
 
-                var params = new FormData();
-                params.append('key', gfyResult.gfyname);
+//this works but not the way its designed to
+//right now the index never increases - we're always looking at the first file
+  async function uploadGfy(i, max, token) {
+    var authHeaders = new Headers();
+    authHeaders.append("Authorization", "Bearer "+token);
+    
+    var gfycatsOptions = {
+      method: 'POST',
+      headers: authHeaders,
+      redirect: 'follow'
+    }
+    var files = fs.readdirSync(videoPath);
+    numberOfFiles = files.length;
+    if (files[i]) {
+        return fetch("https://api.gfycat.com/v1/gfycats", gfycatsOptions)
+        .then(res=>res.json())
+        .then(gfyResult => {
+            console.log(gfyResult);
+            var newFilePath = path.join(uploadPath, gfyResult.gfyname);
+            //but we move the file, so the first file changes
+            //should probably rename it at the end, in case of errors
+            fs.renameSync(path.join(videoPath, files[i]), newFilePath);
 
-                var file = fs.readFileSync(newFilePath);            
-                params.append('file', file, newFilePath);
+            var params = new FormData();
+            params.append('key', gfyResult.gfyname);
 
-                fetch('https://filedrop.gfycat.com', {method: 'POST', body: params, redirect: 'follow'})
-                .then((res)=> {
-                    
-                    let data = {
-                        "gfyURL": gfyResult.gfyname,
-                        "fileName": files[i],
-                        "votes": ""
-                    }
-                    gfyFiles.push(data);
-                    db.collection('clips').add(data);
-                    //Guess this will be an insert statement once i have a DB
-                    writeLog(i);
-                });            
-            });
-        }   
-  });
+            var file = fs.readFileSync(newFilePath);            
+            params.append('file', file, newFilePath);
 
-  function writeLog(i) {
-    if (i == (numberOfFiles - 1)) {
+            fetch('https://filedrop.gfycat.com', {method: 'POST', body: params, redirect: 'follow'})
+            .then((res)=> {
+
+                let data = {
+                    "clipName": gfyResult.gfyname,
+                    "fileName": files[i],
+                    "votes": ""
+                }
+                gfyFiles.push(data);
+                db.collection('clips').add(data).then(() => {
+                    uploadGfy(i++, max, token);
+                    return;
+                })
+            })
+            .catch(err => console.log(err));            
+        }).catch(err => console.log(err));
+    } else {
         var dateTime = moment().valueOf();
-        console.log(gfyFiles);
         fs.writeFile(path.join(__dirname,`../uploadedFiles/uploadedFiles-${dateTime}.json`), JSON.stringify(gfyFiles), function(err) {
         });
     }

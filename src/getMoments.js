@@ -31,12 +31,18 @@ fs.readdir(inboxPath, function(err, files) {
         let file = path.join(inboxPath, files[i])        
         const game = new SlippiGame(file);        
         //this is where some super algorithim would tell us what to capture
-        var conversions = game.getStats().conversions.filter(conversion=>conversion.moves.length > 5 && conversion.didKill);
-        conversions.forEach(function(conversion) {            
+        var conversions = game.getStats().conversions.filter(conversion=>conversion.moves.length > 5 || conversion.didKill || (conversion.endFrame - conversion.startFrame >= 400) 
+        || (conversion.endPercent - conversion.startPercent >= 40));
+        //more than 5 moves, or it killed, or framediff > x, or percent diff > x
+        conversions.forEach(function(conversion) {
+                let realStartFrame = Math.max(-123, conversion.startFrame);
+                let realEndFrame = Math.min(game.getLatestFrame().frame, conversion.endFrame);            
             var queue = {
                 "path" : file,
-                "startFrame" : Math.max(-123, conversion.startFrame-30),
-                "endFrame" : Math.min(game.getLatestFrame().frame, conversion.endFrame+30)
+                "startFrame" : Math.max(-123, realStartFrame - 30),
+                "endFrame" : Math.min(game.getLatestFrame().frame, realEndFrame + 30),
+                "realStartFrame": realStartFrame,
+                "realEndFrame": realEndFrame
             }
             output.queue.push(queue);
         })
