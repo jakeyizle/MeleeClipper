@@ -7,8 +7,8 @@ const inboxPath = path.join(__dirname, '../replayInbox');
 const dolphinVideo = 'C:\\Users\\18135\\AppData\\Roaming\\Slippi Desktop App\\dolphin\\User\\Dump\\Frames\\framedump0.avi'
 //slippi dolphin has to be edited to shutdown at the end of replays, which requires editing the code and then rebuilding
 //also configure it to dump frames
-const dolphinPath = "C:\\Users\\18135\\AppData\\Roaming\\Slippi Desktop App\\dolphin\\Dolphin.exe"
-const isoPath = "D:\\Games\\Dolphin Isos\\Super Smash Bros. Melee (USA) (En,Ja) (Rev 2).nkit.iso"
+const dolphinPath = "C:\\Users\\18135\\AppData\\Roaming\\Slippi Launcher\\playback\\Slippi Dolphin.exe"
+const isoPath = "D:\\Games\\Dolphin Isos\\SSBM Vanilla.iso"
 
 if (!fs.existsSync(dolphinPath)) {
     throw new error("Dolphin not present");

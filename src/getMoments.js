@@ -3,6 +3,16 @@ const fs = require ('fs');
 const path = require('path');
 const inboxPath = path.join(__dirname, '../replayInbox');
 
+const admin = require('firebase-admin');
+const serviceAccount = require('../settings/meleeclipper-8a8ca8cb8489.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+const db = admin.firestore();
+const gamesRef = db.collection('games');
+
+
+
 var output = {
     "mode": "queue",
     "replay": "",
@@ -26,7 +36,10 @@ fs.readdir(inboxPath, function(err, files) {
     if (err) {
         return console.log('error: '+err);
     }
-        
+    files = files.filter((_file) => {
+        return path.extname(_file).toLowerCase() === '.slp';
+    })
+
     for (let i = 0; i < files.length; i++) {        
         let file = path.join(inboxPath, files[i])        
         const game = new SlippiGame(file);        
@@ -46,6 +59,30 @@ fs.readdir(inboxPath, function(err, files) {
             }
             output.queue.push(queue);
         })
+        //add check to see if game already exists
+        
+        let settings = game.getSettings();
+        let data = {...game.getStats(), ...game.getMetadata(), settings}
+        //there is a conflict between settings.players and metadata.players
+        delete data.settings.players;
+
+        //create uniqueid by using playernames and gametime
+        data.gameHash = hashCode(data.players[0].names.code+data.players[1].names.code+data.startAt);
+
+        db.collection('games').where('gameHash', '==', data.gameHash).get().then((snapshot) => {
+            if (snapshot.empty) {
+                db.collection('games').add(data).then(() => {
+                    console.log('ding');
+                })
+            }
+            else {
+                console.log(`Duplicate found for hash - ${data.gameHash}`);                
+            }
+        });        
+
+
+
+        
     }
 
     fs.writeFile(path.join(inboxPath,"moments.json"), JSON.stringify(output), function(err) {
@@ -56,3 +93,15 @@ fs.readdir(inboxPath, function(err, files) {
     });
 
 })
+
+
+function hashCode(str){
+    var hash = 0;
+    if (str.length == 0) return hash;
+    for (i = 0; i < str.length; i++) {
+        char = str.charCodeAt(i);
+        hash = ((hash<<5)-hash)+char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return hash;
+}
